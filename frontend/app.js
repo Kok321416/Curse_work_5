@@ -618,3 +618,4 @@ function getDaysWord(days) {
 function editHabit(habitId) {
     showAlert('Функция редактирования будет добавлена в следующей версии', 'info');
 }
+

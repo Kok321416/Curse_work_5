@@ -124,3 +124,4 @@ def schedule_habit_reminders():
     
     logger.info(f"Запланировано {scheduled_count} напоминаний о привычках")
     return scheduled_count
+
