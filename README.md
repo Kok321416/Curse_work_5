@@ -15,13 +15,12 @@
 
 ## Технологии
 
-- Django 4.2.7
-- Django REST Framework
-- PostgreSQL
-- Redis
-- Celery
-- Telegram Bot API
-- Docker
+- **Backend:** Django 4.2.7 + Django REST Framework
+- **База данных:** PostgreSQL 15
+- **Кэш/Очереди:** Redis 7 + Celery
+- **Интеграции:** Telegram Bot API
+- **Контейнеризация:** Docker + Docker Compose
+- **Документация:** drf-spectacular (Swagger/ReDoc)
 
 ## Установка и запуск
 
@@ -49,60 +48,91 @@ pip install -r requirements.txt
 
 ### 4. Настройка переменных окружения
 
-Создайте файл `.env` на основе `env_example.txt`:
+Создайте файл `.env` на основе шаблона:
 
 ```bash
-SECRET_KEY=your-secret-key-here
-DEBUG=True
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/habit_tracker
-REDIS_URL=redis://localhost:6379/0
-TELEGRAM_BOT_TOKEN=your-telegram-bot-token-here
-ALLOWED_HOSTS=localhost,127.0.0.1
+# Скопировать шаблон
+cp env_template .env
+
+# Отредактировать файл .env и указать:
+# - SECRET_KEY (для продакшн)
+# - TELEGRAM_BOT_TOKEN (ваш токен бота)
+# - Другие настройки при необходимости
 ```
 
-### 5. Запуск зависимостей (PostgreSQL и Redis)
+### 5. Запуск через Docker (рекомендуемый способ)
 
 ```bash
+# Запустить все сервисы (PostgreSQL, Redis, Django, Celery)
 docker-compose up -d
+
+# Создать суперпользователя
+docker-compose exec web python manage.py createsuperuser
+
+# Проверить статус сервисов
+docker-compose ps
 ```
 
-### 6. Применение миграций
+**Доступные сервисы:**
+- **API:** http://localhost:8000/api/
+- **Документация:** http://localhost:8000/api/docs/
+- **Админка:** http://localhost:8000/admin/
+
+### Альтернативный запуск (без Docker)
 
 ```bash
-python manage.py makemigrations
+# Запуск зависимостей
+docker-compose up -d db redis
+
+# Применение миграций
 python manage.py migrate
-```
 
-### 7. Создание суперпользователя
-
-```bash
+# Создание суперпользователя
 python manage.py createsuperuser
-```
 
-### 8. Запуск сервера разработки
-
-```bash
+# Запуск сервера разработки
 python manage.py runserver
-```
 
-### 9. Запуск Celery worker (в отдельном терминале)
-
-```bash
+# В отдельных терминалах:
 celery -A habit_tracker worker -l info
-```
-
-### 10. Запуск Celery beat (в отдельном терминале)
-
-```bash
 celery -A habit_tracker beat -l info
 ```
+
+## Проверка работоспособности сервисов
+
+После запуска `docker-compose up -d` проверьте статус всех сервисов:
+
+```bash
+# Проверить статус контейнеров
+docker-compose ps
+
+# Проверить логи
+docker-compose logs web
+docker-compose logs celery
+docker-compose logs celery-beat
+
+# Проверить подключение к базе данных
+docker-compose exec db psql -U postgres -d habit_tracker -c "SELECT 1;"
+
+# Проверить Redis
+docker-compose exec redis redis-cli ping
+
+# Проверить Django приложение
+curl http://localhost:8000/api/docs/
+```
+
+**Ожидаемые результаты:**
+- **Web сервис:** http://localhost:8000/api/docs/ открывается
+- **База данных:** команда возвращает "1"
+- **Redis:** команда возвращает "PONG"
+- **Celery:** в логах нет ошибок подключения
 
 ## Создание Telegram бота
 
 1. Найдите в Telegram бота @BotFather
 2. Отправьте команду `/newbot`
 3. Следуйте инструкциям для создания бота
-4. Скопируйте полученный токен в переменную окружения `TELEGRAM_BOT_TOKEN`
+4. Скопируйте полученный токен в файл `.env`
 
 ## API Endpoints
 
@@ -189,10 +219,35 @@ python manage.py schedule_reminders
 
 ```
 habit_tracker/
-├── habit_tracker/          # Основные настройки проекта
-├── users/                  # Приложение пользователей
-├── habits/                 # Приложение привычек
-├── requirements.txt        # Зависимости
-├── docker-compose.yml      # Docker конфигурация
-└── README.md              # Документация
+├── 🐳 Docker
+│   ├── Dockerfile              # Образ Django приложения
+│   ├── docker-compose.yml      # Оркестрация сервисов
+│   ├── .dockerignore          # Исключения для Docker
+│   └── env_template           # Шаблон переменных окружения
+├── 🐍 Backend
+│   ├── habit_tracker/         # Настройки Django проекта
+│   ├── users/                 # Пользователи и аутентификация
+│   ├── habits/                # Привычки и валидация
+│   ├── manage.py             # Django CLI
+│   └── requirements.txt      # Python зависимости
+├── 🎨 Frontend
+│   ├── index.html            # SPA приложение
+│   ├── app.js               # JavaScript логика
+│   ├── styles.css           # Стили
+│   └── api_test.html        # Тестер API
+└── 📚 Документация
+    ├── README.md            # Основная документация
+    └── API_ENDPOINTS.md     # Описание API
 ```
+
+## Docker сервисы
+
+Проект включает следующие контейнеры:
+
+| Сервис | Описание | Порт | Зависимости |
+|--------|----------|------|-------------|
+| **web** | Django приложение | 8000 | db, redis |
+| **db** | PostgreSQL база данных | 5432 | - |
+| **redis** | Redis для Celery | 6379 | - |
+| **celery** | Celery worker | - | db, redis |
+| **celery-beat** | Планировщик задач | - | db, redis |
