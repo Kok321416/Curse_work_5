@@ -1,0 +1,254 @@
+/* Additional custom styles for Habit Tracker */
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Apply animations */
+.habit-card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.stats-card {
+    animation: slideIn 0.6s ease-out;
+}
+
+.btn-custom:hover {
+    animation: pulse 0.3s ease-in-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #3730a3, #047857);
+}
+
+/* Responsive design improvements */
+@media (max-width: 768px) {
+    .main-container {
+        margin: 10px;
+        border-radius: 15px;
+    }
+    
+    .stats-card {
+        margin-bottom: 15px;
+    }
+    
+    .habit-card {
+        margin-bottom: 15px;
+    }
+    
+    .btn-custom {
+        padding: 8px 20px;
+        font-size: 0.9em;
+    }
+    
+    .navbar-brand {
+        font-size: 1.1em;
+    }
+    
+    .card-title {
+        font-size: 1em;
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding: 5px;
+    }
+    
+    .main-container {
+        margin: 5px;
+    }
+    
+    .btn-group .btn {
+        font-size: 0.8em;
+        padding: 5px 10px;
+    }
+    
+    .stats-card h3 {
+        font-size: 1.5em;
+    }
+    
+    .stats-card p {
+        font-size: 0.9em;
+    }
+}
+
+/* Loading animation */
+.spinner-border-custom {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Form improvements */
+.form-control-custom:focus {
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+
+/* Badge improvements */
+.badge {
+    font-size: 0.75em;
+    padding: 0.5em 0.75em;
+}
+
+/* Card hover effects */
+.habit-card:hover .card-title {
+    color: var(--primary-color);
+    transition: color 0.3s ease;
+}
+
+/* Navigation improvements */
+.nav-pills .nav-link {
+    margin-right: 10px;
+    margin-bottom: 5px;
+}
+
+.nav-pills .nav-link.active {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+}
+
+/* Alert improvements */
+.alert-custom {
+    border-left: 4px solid;
+    animation: slideIn 0.3s ease-out;
+}
+
+.alert-success {
+    border-left-color: var(--secondary-color);
+}
+
+.alert-danger {
+    border-left-color: var(--danger-color);
+}
+
+.alert-warning {
+    border-left-color: var(--warning-color);
+}
+
+.alert-info {
+    border-left-color: var(--primary-color);
+}
+
+/* Pagination improvements */
+.pagination .page-link {
+    border-radius: 20px;
+    margin: 0 5px;
+    border: none;
+    color: var(--primary-color);
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    border: none;
+}
+
+/* Empty state improvements */
+.text-center.py-5 i {
+    animation: pulse 2s infinite;
+}
+
+/* Form validation styles */
+.form-control:invalid {
+    border-color: var(--danger-color);
+}
+
+.form-control:valid {
+    border-color: var(--secondary-color);
+}
+
+/* Button loading state */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .main-container {
+        background: rgba(30, 30, 30, 0.95);
+        color: #ffffff;
+    }
+    
+    .habit-card {
+        background: rgba(40, 40, 40, 0.9);
+        color: #ffffff;
+    }
+    
+    .form-control-custom {
+        background: rgba(50, 50, 50, 0.8);
+        border-color: #555;
+        color: #ffffff;
+    }
+    
+    .text-muted {
+        color: #aaa !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .navbar-custom,
+    .btn,
+    .pagination,
+    #alerts-container {
+        display: none !important;
+    }
+    
+    .main-container {
+        box-shadow: none;
+        background: white;
+    }
+    
+    .habit-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}

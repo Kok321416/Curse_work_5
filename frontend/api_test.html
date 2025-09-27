@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Тестер - Трекер привычек</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .endpoint-card { margin-bottom: 20px; }
+        .response-area { 
+            background-color: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            border-radius: 5px; 
+            padding: 15px; 
+            font-family: monospace; 
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .method-badge { font-size: 0.8em; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">🧪 API Тестер - Трекер привычек</h1>
+        
+        <!-- Конфигурация -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>⚙️ Конфигурация</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">API Base URL:</label>
+                        <input type="text" class="form-control" id="apiBaseUrl" value="http://localhost:8000/api">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Auth Token:</label>
+                        <input type="text" class="form-control" id="authToken" placeholder="Получите токен через регистрацию/авторизацию">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Регистрация -->
+        <div class="card endpoint-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6>👤 Регистрация пользователя</h6>
+                <span class="badge bg-success method-badge">POST</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <textarea class="form-control mb-3" id="registerData" rows="8">{
+  "email": "test@example.com",
+  "username": "testuser",
+  "first_name": "Тест",
+  "last_name": "Пользователь",
+  "password": "testpass123",
+  "password_confirm": "testpass123"
+}</textarea>
+                        <button class="btn btn-primary" onclick="testRegister()">Отправить запрос</button>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="response-area" id="registerResponse">Ответ появится здесь...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Авторизация -->
+        <div class="card endpoint-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6>🔐 Авторизация</h6>
+                <span class="badge bg-success method-badge">POST</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <textarea class="form-control mb-3" id="loginData" rows="4">{
+  "email": "test@example.com",
+  "password": "testpass123"
+}</textarea>
+                        <button class="btn btn-primary" onclick="testLogin()">Отправить запрос</button>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="response-area" id="loginResponse">Ответ появится здесь...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Профиль -->
+        <div class="card endpoint-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6>👤 Профиль пользователя</h6>
+                <span class="badge bg-info method-badge">GET</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="text-muted">Требует авторизации (токен)</p>
+                        <button class="btn btn-info" onclick="testProfile()">Получить профиль</button>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="response-area" id="profileResponse">Ответ появится здесь...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Создание привычки -->
+        <div class="card endpoint-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6>🎯 Создание привычки</h6>
+                <span class="badge bg-success method-badge">POST</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <textarea class="form-control mb-3" id="habitData" rows="10">{
+  "place": "Кухня",
+  "time": "08:00",
+  "action": "Выпить стакан воды",
+  "is_pleasant": false,
+  "periodicity": 1,
+  "execution_time": 30,
+  "is_public": true,
+  "reward": "Послушать музыку"
+}</textarea>
+                        <button class="btn btn-success" onclick="testCreateHabit()">Создать привычку</button>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="response-area" id="habitResponse">Ответ появится здесь...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Список привычек -->
+        <div class="card endpoint-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6>📋 Список привычек</h6>
+                <span class="badge bg-info method-badge">GET</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="text-muted">Получить список привычек пользователя</p>
+                        <button class="btn btn-info" onclick="testGetHabits()">Получить список</button>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="response-area" id="habitsResponse">Ответ появится здесь...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Публичные привычки -->
+        <div class="card endpoint-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6>🌍 Публичные привычки</h6>
+                <span class="badge bg-info method-badge">GET</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="text-muted">Получить список публичных привычек</p>
+                        <button class="btn btn-info" onclick="testGetPublicHabits()">Получить список</button>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="response-area" id="publicHabitsResponse">Ответ появится здесь...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Приятные привычки -->
+        <div class="card endpoint-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6>😊 Приятные привычки</h6>
+                <span class="badge bg-info method-badge">GET</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="text-muted">Получить список приятных привычек для связывания</p>
+                        <button class="btn btn-info" onclick="testGetPleasantHabits()">Получить список</button>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="response-area" id="pleasantHabitsResponse">Ответ появится здесь...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Документация -->
+        <div class="card endpoint-card">
+            <div class="card-header">
+                <h6>📚 Документация API</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <a href="http://localhost:8000/api/docs/" target="_blank" class="btn btn-outline-primary w-100 mb-2">
+                            📖 Swagger UI
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="http://localhost:8000/api/redoc/" target="_blank" class="btn btn-outline-info w-100 mb-2">
+                            📋 ReDoc
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-secondary w-100 mb-2" onclick="testSchema()">
+                            🔧 OpenAPI Schema
+                        </button>
+                    </div>
+                </div>
+                <div class="response-area" id="schemaResponse" style="display: none;">Schema появится здесь...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Утилиты
+        function getApiUrl() {
+            return document.getElementById('apiBaseUrl').value;
+        }
+
+        function getAuthToken() {
+            return document.getElementById('authToken').value;
+        }
+
+        function showResponse(elementId, response, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = `response-area ${isError ? 'error' : 'success'}`;
+            element.textContent = JSON.stringify(response, null, 2);
+        }
+
+        function showError(elementId, error) {
+            showResponse(elementId, { error: error.message || error }, true);
+        }
+
+        async function makeRequest(url, options = {}) {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            if (token) {
+                headers['Authorization'] = `Token ${token}`;
+            }
+
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.detail || data.error || `HTTP ${response.status}`);
+            }
+
+            return data;
+        }
+
+        // Тесты API
+        async function testRegister() {
+            try {
+                const data = JSON.parse(document.getElementById('registerData').value);
+                const response = await makeRequest(`${getApiUrl()}/users/register/`, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+                
+                // Автоматически сохраняем токен
+                if (response.token) {
+                    document.getElementById('authToken').value = response.token;
+                }
+                
+                showResponse('registerResponse', response);
+            } catch (error) {
+                showError('registerResponse', error);
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const data = JSON.parse(document.getElementById('loginData').value);
+                const response = await makeRequest(`${getApiUrl()}/users/login/`, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+                
+                // Автоматически сохраняем токен
+                if (response.token) {
+                    document.getElementById('authToken').value = response.token;
+                }
+                
+                showResponse('loginResponse', response);
+            } catch (error) {
+                showError('loginResponse', error);
+            }
+        }
+
+        async function testProfile() {
+            try {
+                const response = await makeRequest(`${getApiUrl()}/users/profile/`);
+                showResponse('profileResponse', response);
+            } catch (error) {
+                showError('profileResponse', error);
+            }
+        }
+
+        async function testCreateHabit() {
+            try {
+                const data = JSON.parse(document.getElementById('habitData').value);
+                const response = await makeRequest(`${getApiUrl()}/habits/`, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+                showResponse('habitResponse', response);
+            } catch (error) {
+                showError('habitResponse', error);
+            }
+        }
+
+        async function testGetHabits() {
+            try {
+                const response = await makeRequest(`${getApiUrl()}/habits/`);
+                showResponse('habitsResponse', response);
+            } catch (error) {
+                showError('habitsResponse', error);
+            }
+        }
+
+        async function testGetPublicHabits() {
+            try {
+                const response = await makeRequest(`${getApiUrl()}/public-habits/`);
+                showResponse('publicHabitsResponse', response);
+            } catch (error) {
+                showError('publicHabitsResponse', error);
+            }
+        }
+
+        async function testGetPleasantHabits() {
+            try {
+                const response = await makeRequest(`${getApiUrl()}/habits/pleasant_habits/`);
+                showResponse('pleasantHabitsResponse', response);
+            } catch (error) {
+                showError('pleasantHabitsResponse', error);
+            }
+        }
+
+        async function testSchema() {
+            try {
+                const response = await fetch(`${getApiUrl()}/schema/`);
+                const data = await response.json();
+                document.getElementById('schemaResponse').style.display = 'block';
+                showResponse('schemaResponse', data);
+            } catch (error) {
+                document.getElementById('schemaResponse').style.display = 'block';
+                showError('schemaResponse', error);
+            }
+        }
+    </script>
+</body>
+</html>
