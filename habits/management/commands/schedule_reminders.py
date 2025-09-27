@@ -10,3 +10,4 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(f'Успешно запланировано {count} напоминаний о привычках')
         )
+

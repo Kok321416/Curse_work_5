@@ -8,3 +8,4 @@ urlpatterns = [
     path('login/', login_view, name='login'),
     path('profile/', UserProfileView.as_view(), name='profile'),
 ]
+

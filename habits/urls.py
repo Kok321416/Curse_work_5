@@ -11,3 +11,4 @@ router.register(r'public-habits', PublicHabitViewSet, basename='public-habit')
 urlpatterns = [
     path('', include(router.urls)),
 ]
+

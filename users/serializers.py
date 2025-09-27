@@ -43,3 +43,4 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'telegram_chat_id')
+
