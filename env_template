@@ -23,3 +23,4 @@ WEB_PORT=8000
 # Celery настройки
 CELERY_BROKER_URL=redis://redis:6379/0
 CELERY_RESULT_BACKEND=redis://redis:6379/0
+

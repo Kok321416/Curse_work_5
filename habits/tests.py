@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.core.exceptions import ValidationError
 from rest_framework.test import APITestCase
 from rest_framework import status
-from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from unittest.mock import patch
 from .models import Habit
@@ -59,7 +59,7 @@ class HabitModelTest(TestCase):
             execution_time=60,
             is_pleasant=True
         )
-        
+
         with self.assertRaises(ValidationError):
             habit = Habit(
                 user=self.user,
@@ -96,7 +96,7 @@ class HabitModelTest(TestCase):
             execution_time=60,
             is_pleasant=True
         )
-        
+
         with self.assertRaises(ValidationError):
             habit = Habit(
                 user=self.user,
@@ -149,8 +149,8 @@ class HabitAPITest(APITestCase):
             username='otheruser',
             password='testpass123'
         )
-        self.token = Token.objects.create(user=self.user)
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        refresh = RefreshToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(refresh.access_token))
 
     def test_create_habit(self):
         """Тест создания привычки через API"""
@@ -184,7 +184,7 @@ class HabitAPITest(APITestCase):
             action='Сделать зарядку',
             execution_time=120
         )
-        
+
         url = reverse('habits:habit-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -200,7 +200,7 @@ class HabitAPITest(APITestCase):
             action='Выпить стакан воды',
             execution_time=60
         )
-        
+
         url = reverse('habits:habit-detail', kwargs={'pk': habit.pk})
         data = {
             'place': 'Кухня',
@@ -222,7 +222,7 @@ class HabitAPITest(APITestCase):
             action='Выпить стакан воды',
             execution_time=60
         )
-        
+
         url = reverse('habits:habit-detail', kwargs={'pk': habit.pk})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -237,7 +237,7 @@ class HabitAPITest(APITestCase):
             action='Выпить стакан воды',
             execution_time=60
         )
-        
+
         url = reverse('habits:habit-detail', kwargs={'pk': habit.pk})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -260,7 +260,7 @@ class HabitAPITest(APITestCase):
             execution_time=120,
             is_public=True
         )
-        
+
         url = reverse('habits:public-habit-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -278,7 +278,7 @@ class HabitAPITest(APITestCase):
                 action=f'Действие {i}',
                 execution_time=60
             )
-        
+
         url = reverse('habits:habit-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -303,7 +303,7 @@ class HabitAPITest(APITestCase):
             execution_time=60,
             is_pleasant=True
         )
-        
+
         url = reverse('habits:habit-pleasant-habits')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -327,7 +327,7 @@ class HabitTasksTest(TestCase):
         """Тест успешной отправки сообщения в Telegram"""
         mock_post.return_value.status_code = 200
         mock_post.return_value.raise_for_status.return_value = None
-        
+
         result = send_telegram_message('123456789', 'Тестовое сообщение')
         self.assertTrue(result)
         mock_post.assert_called_once()
@@ -336,7 +336,7 @@ class HabitTasksTest(TestCase):
     def test_send_telegram_message_failure(self, mock_post):
         """Тест неудачной отправки сообщения в Telegram"""
         mock_post.side_effect = Exception('Network error')
-        
+
         result = send_telegram_message('123456789', 'Тестовое сообщение')
         self.assertFalse(result)
 
@@ -344,7 +344,7 @@ class HabitTasksTest(TestCase):
     def test_send_habit_reminder(self, mock_send_message):
         """Тест отправки напоминания о привычке"""
         mock_send_message.return_value = True
-        
+
         habit = Habit.objects.create(
             user=self.user,
             place='Дом',
@@ -353,7 +353,7 @@ class HabitTasksTest(TestCase):
             execution_time=60,
             reward='Съесть яблоко'
         )
-        
+
         result = send_habit_reminder(habit.id)
         self.assertTrue(result)
         mock_send_message.assert_called_once()
@@ -365,7 +365,7 @@ class HabitTasksTest(TestCase):
             username='notelegram',
             password='testpass123'
         )
-        
+
         habit = Habit.objects.create(
             user=user_without_telegram,
             place='Дом',
@@ -373,7 +373,7 @@ class HabitTasksTest(TestCase):
             action='Выпить стакан воды',
             execution_time=60
         )
-        
+
         result = send_habit_reminder(habit.id)
         self.assertFalse(result)
 

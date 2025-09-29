@@ -150,3 +150,4 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 # Обновление без даунтайма
 docker-compose up -d --no-deps web
 ```
+

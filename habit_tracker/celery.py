@@ -1,6 +1,5 @@
 import os
 from celery import Celery
-from django.conf import settings
 
 # Установка переменной окружения для настроек Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'habit_tracker.settings')

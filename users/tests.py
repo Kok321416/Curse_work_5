@@ -2,7 +2,6 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -48,7 +47,8 @@ class UserRegistrationTest(APITestCase):
         }
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn('token', response.data)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
         self.assertIn('user', response.data)
 
     def test_user_registration_password_mismatch(self):
@@ -70,7 +70,7 @@ class UserRegistrationTest(APITestCase):
             username='existinguser',
             password='testpass123'
         )
-        
+
         url = reverse('users:register')
         data = {
             'email': 'test@example.com',
@@ -101,7 +101,8 @@ class UserLoginTest(APITestCase):
         }
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('token', response.data)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
         self.assertIn('user', response.data)
 
     def test_user_login_invalid_credentials(self):
@@ -133,11 +134,13 @@ class UserProfileTest(APITestCase):
             username='testuser',
             password='testpass123'
         )
-        self.token = Token.objects.create(user=self.user)
+        # JWT токен будет создан в тестах при необходимости
 
     def test_get_profile_authenticated(self):
         """Тест получения профиля авторизованным пользователем"""
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        from rest_framework_simplejwt.tokens import RefreshToken
+        refresh = RefreshToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(refresh.access_token))
         url = reverse('users:profile')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -151,7 +154,9 @@ class UserProfileTest(APITestCase):
 
     def test_update_profile(self):
         """Тест обновления профиля"""
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        from rest_framework_simplejwt.tokens import RefreshToken
+        refresh = RefreshToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(refresh.access_token))
         url = reverse('users:profile')
         data = {
             'first_name': 'Updated',
