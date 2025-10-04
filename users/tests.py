@@ -91,6 +91,9 @@ class UserLoginTest(APITestCase):
             username='testuser',
             password='testpass123'
         )
+        # Убеждаемся, что пароль установлен правильно
+        self.user.set_password('testpass123')
+        self.user.save()
 
     def test_user_login_success(self):
         """Тест успешной авторизации"""

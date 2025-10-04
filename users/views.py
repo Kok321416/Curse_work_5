@@ -3,7 +3,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
 from .models import User
 from .serializers import UserRegistrationSerializer, UserSerializer, UserProfileUpdateSerializer
 
@@ -45,8 +44,11 @@ def login_view(request):
 
     # Аутентификация по email
     try:
-        user = User.objects.get(email=email)
-        user = authenticate(username=user.username, password=password)
+        user_obj = User.objects.get(email=email)
+        if user_obj.check_password(password):
+            user = user_obj
+        else:
+            user = None
     except User.DoesNotExist:
         user = None
 
