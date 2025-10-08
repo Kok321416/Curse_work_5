@@ -1,0 +1,35 @@
+# Django настройки
+SECRET_KEY=your-secret-key-here-change-in-production-must-be-50-chars-long
+DEBUG=False
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,your-server-ip,your-domain.com
+
+# База данных PostgreSQL
+POSTGRES_DB=habit_tracker_prod
+POSTGRES_USER=habit_user
+POSTGRES_PASSWORD=secure_password_change_in_production
+POSTGRES_PORT=5432
+DATABASE_URL=postgresql://habit_user:secure_password_change_in_production@db:5432/habit_tracker_prod
+
+# Redis
+REDIS_PORT=6379
+REDIS_URL=redis://redis:6379/0
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token-here
+
+# Порты сервисов
+WEB_PORT=8000
+
+# Celery настройки
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+# Production настройки
+DJANGO_SETTINGS_MODULE=habit_tracker.settings
+PYTHONPATH=/app
+PYTHONUNBUFFERED=1
+
+# Безопасность
+SECURE_SSL_REDIRECT=False
+SECURE_PROXY_SSL_HEADER=HTTP_X_FORWARDED_PROTO,https
+USE_TZ=True

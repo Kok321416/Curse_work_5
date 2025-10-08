@@ -1,0 +1,29 @@
+[flake8]
+max-line-length = 120
+exclude = 
+    migrations,
+    __pycache__,
+    manage.py,
+    settings.py,
+    env,
+    venv,
+    .venv,
+    .git,
+    .tox,
+    dist,
+    doc,
+    *egg,
+    build
+ignore = 
+    # W503: line break before binary operator (conflicts with W504)
+    W503,
+    # E203: whitespace before ':' (conflicts with black)
+    E203
+per-file-ignores =
+    # Django settings can have long lines and imports
+    */settings.py:E501,F401,F403
+    # __init__.py files can have unused imports
+    __init__.py:F401
+    # Tests can have long lines
+    */tests.py:E501
+max-complexity = 10

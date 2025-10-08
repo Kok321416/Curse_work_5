@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Habit
 from .serializers import HabitSerializer, PublicHabitSerializer, PleasantHabitSerializer
 from .permissions import IsOwner
+from .pagination import HabitPagination
 
 
 class HabitViewSet(viewsets.ModelViewSet):
@@ -12,6 +13,7 @@ class HabitViewSet(viewsets.ModelViewSet):
     
     serializer_class = HabitSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwner]
+    pagination_class = HabitPagination
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['is_pleasant', 'is_public']
     
@@ -29,9 +31,10 @@ class HabitViewSet(viewsets.ModelViewSet):
 
 class PublicHabitViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet для просмотра публичных привычек"""
-    
+
     queryset = Habit.objects.filter(is_public=True).select_related('user')
     serializer_class = PublicHabitSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = HabitPagination
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['user']
