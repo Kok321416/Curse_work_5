@@ -117,21 +117,48 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha
-          type=raw,value=latest,enable={{is_default_branch}}
-
-    - name: Debug metadata
+    - name: Generate safe tag
+      id: tag
       run: |
-        echo "Generated tags: ${{ steps.meta.outputs.tags }}"
-        echo "Generated labels: ${{ steps.meta.outputs.labels }}"
+        # Создаем безопасный тег на основе SHA и ветки
+        BRANCH_NAME="${{ github.ref_name }}"
+        SHORT_SHA="${{ github.sha }}"
+        SHORT_SHA=${SHORT_SHA:0:7}
+        
+        # Очищаем имя ветки от недопустимых символов
+        SAFE_BRANCH=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9._-]/_/g')
+        
+        # Убеждаемся, что SAFE_BRANCH не пустой
+        if [ -z "$SAFE_BRANCH" ]; then
+          SAFE_BRANCH="unknown"
+        fi
+        
+        # Генерируем теги
+        if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          TAGS="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          TAGS="${TAGS},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${SAFE_BRANCH}"
+          TAGS="${TAGS},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${SHORT_SHA}"
+        else
+          TAGS="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${SAFE_BRANCH}"
+          TAGS="${TAGS},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${SHORT_SHA}"
+        fi
+        
+        echo "Branch: $BRANCH_NAME -> $SAFE_BRANCH"
+        echo "SHA: ${{ github.sha }} -> $SHORT_SHA"
+        echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+        echo "Generated tags: ${TAGS}"
+
+    - name: Set labels
+      id: labels
+      run: |
+        LABELS="org.opencontainers.image.title=Habit Tracker"
+        LABELS="${LABELS},org.opencontainers.image.description=API для трекера полезных привычек"
+        LABELS="${LABELS},org.opencontainers.image.source=https://github.com/${{ github.repository }}"
+        LABELS="${LABELS},org.opencontainers.image.revision=${{ github.sha }}"
+        LABELS="${LABELS},org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+        
+        echo "labels=${LABELS}" >> $GITHUB_OUTPUT
+        echo "Generated labels: ${LABELS}"
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
@@ -139,8 +166,8 @@ jobs:
         context: .
         platforms: linux/amd64
         push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+        tags: ${{ steps.tag.outputs.tags }}
+        labels: ${{ steps.labels.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
