@@ -125,6 +125,10 @@ jobs:
         SHORT_SHA="${{ github.sha }}"
         SHORT_SHA=${SHORT_SHA:0:7}
         
+        # Приводим имя репозитория к нижнему регистру
+        REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+        IMAGE_NAME="${{ env.REGISTRY }}/${REPO_OWNER}/curse_work_5"
+        
         # Очищаем имя ветки от недопустимых символов
         SAFE_BRANCH=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9._-]/_/g')
         
@@ -135,14 +139,16 @@ jobs:
         
         # Генерируем теги
         if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-          TAGS="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
-          TAGS="${TAGS},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${SAFE_BRANCH}"
-          TAGS="${TAGS},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${SHORT_SHA}"
+          TAGS="${IMAGE_NAME}:latest"
+          TAGS="${TAGS},${IMAGE_NAME}:${SAFE_BRANCH}"
+          TAGS="${TAGS},${IMAGE_NAME}:sha-${SHORT_SHA}"
         else
-          TAGS="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${SAFE_BRANCH}"
-          TAGS="${TAGS},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${SHORT_SHA}"
+          TAGS="${IMAGE_NAME}:${SAFE_BRANCH}"
+          TAGS="${TAGS},${IMAGE_NAME}:sha-${SHORT_SHA}"
         fi
         
+        echo "Repository owner: ${{ github.repository_owner }} -> ${REPO_OWNER}"
+        echo "Image name: ${IMAGE_NAME}"
         echo "Branch: $BRANCH_NAME -> $SAFE_BRANCH"
         echo "SHA: ${{ github.sha }} -> $SHORT_SHA"
         echo "tags=${TAGS}" >> $GITHUB_OUTPUT
