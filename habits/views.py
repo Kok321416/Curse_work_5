@@ -10,18 +10,20 @@ from .pagination import HabitPagination
 
 class HabitViewSet(viewsets.ModelViewSet):
     """ViewSet для работы с привычками пользователя"""
-    
+
     serializer_class = HabitSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwner]
     pagination_class = HabitPagination
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['is_pleasant', 'is_public']
-    
+    filterset_fields = ["is_pleasant", "is_public"]
+
     def get_queryset(self):
         """Возвращает только привычки текущего пользователя"""
-        return Habit.objects.filter(user=self.request.user).select_related('related_habit')
-    
-    @action(detail=False, methods=['get'])
+        return Habit.objects.filter(user=self.request.user).select_related(
+            "related_habit"
+        )
+
+    @action(detail=False, methods=["get"])
     def pleasant_habits(self, request):
         """Получить список приятных привычек пользователя для выбора в связанных привычках"""
         pleasant_habits = self.get_queryset().filter(is_pleasant=True)
@@ -32,9 +34,9 @@ class HabitViewSet(viewsets.ModelViewSet):
 class PublicHabitViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet для просмотра публичных привычек"""
 
-    queryset = Habit.objects.filter(is_public=True).select_related('user')
+    queryset = Habit.objects.filter(is_public=True).select_related("user")
     serializer_class = PublicHabitSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = HabitPagination
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['user']
+    filterset_fields = ["user"]

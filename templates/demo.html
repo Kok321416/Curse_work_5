@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+
+{% block title %}Демо - Habit Tracker{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="text-center mb-5">
+                <i class="fas fa-play-circle me-2"></i>Демонстрация функционала
+            </h1>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="row mb-5">
+        <div class="col-md-3">
+            <div class="card text-center bg-primary text-white">
+                <div class="card-body">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <h3>{{ users_count }}</h3>
+                    <p class="mb-0">Пользователей</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <i class="fas fa-seedling fa-2x mb-2"></i>
+                    <h3>{{ habits_count }}</h3>
+                    <p class="mb-0">Всего привычек</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-info text-white">
+                <div class="card-body">
+                    <i class="fas fa-globe fa-2x mb-2"></i>
+                    <h3>{{ public_habits_count }}</h3>
+                    <p class="mb-0">Публичных</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-warning text-white">
+                <div class="card-body">
+                    <i class="fas fa-heart fa-2x mb-2"></i>
+                    <h3>{{ pleasant_habits_count }}</h3>
+                    <p class="mb-0">Приятных</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Публичные привычки -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-globe me-2"></i>Публичные привычки для вдохновения
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if public_habits %}
+                        <div class="row">
+                            {% for habit in public_habits %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card h-100 border-success">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title text-success">
+                                                <i class="fas fa-seedling me-1"></i>{{ habit.action }}
+                                            </h6>
+                                            {% if habit.is_pleasant %}
+                                                <span class="badge bg-warning">Приятная</span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="mb-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>{{ habit.time|time:"H:i" }}
+                                                <i class="fas fa-map-marker-alt ms-2 me-1"></i>{{ habit.place }}
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="mb-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-stopwatch me-1"></i>{{ habit.execution_time }} сек
+                                                <i class="fas fa-calendar ms-2 me-1"></i>Каждые {{ habit.periodicity }} дн.
+                                            </small>
+                                        </div>
+                                        
+                                        {% if habit.reward %}
+                                        <div class="alert alert-warning py-1 px-2 mb-2">
+                                            <small>
+                                                <i class="fas fa-gift me-1"></i><strong>Награда:</strong> {{ habit.reward }}
+                                            </small>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if habit.related_habit %}
+                                        <div class="alert alert-info py-1 px-2 mb-2">
+                                            <small>
+                                                <i class="fas fa-link me-1"></i><strong>Связанная:</strong> {{ habit.related_habit.action }}
+                                            </small>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <div class="text-end">
+                                            <small class="text-muted">
+                                                <i class="fas fa-user me-1"></i>{{ habit.user.first_name|default:habit.user.username }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-seedling fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Пока нет публичных привычек</p>
+                            <a href="/api/docs/" class="btn btn-success">Создать первую привычку</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Все привычки (для демо) -->
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Все привычки в системе (демо)
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if all_habits %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Действие</th>
+                                        <th>Время</th>
+                                        <th>Место</th>
+                                        <th>Длительность</th>
+                                        <th>Периодичность</th>
+                                        <th>Статус</th>
+                                        <th>Пользователь</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for habit in all_habits %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ habit.action }}</strong>
+                                            {% if habit.reward %}
+                                                <br><small class="text-warning">
+                                                    <i class="fas fa-gift me-1"></i>{{ habit.reward }}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ habit.time|time:"H:i" }}</td>
+                                        <td>{{ habit.place }}</td>
+                                        <td>{{ habit.execution_time }} сек</td>
+                                        <td>{{ habit.periodicity }} дн.</td>
+                                        <td>
+                                            {% if habit.is_public %}
+                                                <span class="badge bg-success">Публичная</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Приватная</span>
+                                            {% endif %}
+                                            {% if habit.is_pleasant %}
+                                                <span class="badge bg-warning">Приятная</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ habit.user.first_name|default:habit.user.username }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted">Нет привычек в системе</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API тестирование -->
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-code me-2"></i>Тестирование API
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p>Для тестирования API используйте:</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Тестовый пользователь:</h6>
+                            <ul>
+                                <li><strong>Email:</strong> test@example.com</li>
+                                <li><strong>Пароль:</strong> testpass123</li>
+                                <li><strong>Telegram ID:</strong> 123456789</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Быстрые ссылки:</h6>
+                            <div class="d-grid gap-2">
+                                <a href="/api/docs/" class="btn btn-primary btn-sm" target="_blank">
+                                    <i class="fas fa-external-link-alt me-1"></i>Swagger UI
+                                </a>
+                                <a href="/api/redoc/" class="btn btn-info btn-sm" target="_blank">
+                                    <i class="fas fa-external-link-alt me-1"></i>ReDoc
+                                </a>
+                                <a href="/admin/" class="btn btn-warning btn-sm" target="_blank">
+                                    <i class="fas fa-external-link-alt me-1"></i>Django Admin
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Как это работает -->
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>Как работает трекер привычек
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>🎯 Основные принципы:</h6>
+                            <ul>
+                                <li><strong>Правило 2 минут:</strong> Привычки до 120 секунд</li>
+                                <li><strong>Система вознаграждений:</strong> Награда за выполнение</li>
+                                <li><strong>Связанные привычки:</strong> Полезная + приятная</li>
+                                <li><strong>Контекст:</strong> Конкретное время и место</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>📱 Функционал:</h6>
+                            <ul>
+                                <li><strong>Telegram напоминания:</strong> Автоматические уведомления</li>
+                                <li><strong>Публичные привычки:</strong> Вдохновение от других</li>
+                                <li><strong>API:</strong> Полный CRUD для привычек</li>
+                                <li><strong>Валидация:</strong> Соблюдение принципов книги</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

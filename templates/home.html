@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная - Habit Tracker{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container text-center">
+        <h1 class="display-4 mb-4">
+            <i class="fas fa-seedling me-3"></i>Трекер полезных привычек
+        </h1>
+        <p class="lead mb-4">
+            Создавайте, отслеживайте и развивайте полезные привычки на основе принципов книги "Атомные привычки"
+        </p>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="alert alert-success" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Проект запущен и готов к работе!</strong>
+                </div>
+                <div class="text-center mt-4">
+                    <a href="/demo/" class="btn btn-success btn-lg me-3">
+                        <i class="fas fa-play-circle me-2"></i>Посмотреть демо
+                    </a>
+                    <a href="/api/docs/" class="btn btn-primary btn-lg">
+                        <i class="fas fa-book me-2"></i>API документация
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="text-center mb-5">
+                <i class="fas fa-rocket me-2"></i>Быстрый доступ к API
+            </h2>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- API Documentation -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card api-card h-100 position-relative">
+                <span class="badge bg-success status-badge">Готово</span>
+                <div class="card-body text-center">
+                    <i class="fas fa-book fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">API Документация</h5>
+                    <p class="card-text">Swagger UI с интерактивным тестированием всех эндпоинтов</p>
+                    <a href="/api/docs/" class="btn btn-primary" target="_blank">
+                        <i class="fas fa-external-link-alt me-1"></i>Открыть Swagger
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ReDoc -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card api-card h-100 position-relative">
+                <span class="badge bg-success status-badge">Готово</span>
+                <div class="card-body text-center">
+                    <i class="fas fa-file-alt fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">ReDoc</h5>
+                    <p class="card-text">Альтернативная документация API в красивом формате</p>
+                    <a href="/api/redoc/" class="btn btn-info text-white" target="_blank">
+                        <i class="fas fa-external-link-alt me-1"></i>Открыть ReDoc
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card api-card h-100 position-relative">
+                <span class="badge bg-warning status-badge">Требует входа</span>
+                <div class="card-body text-center">
+                    <i class="fas fa-cog fa-3x text-warning mb-3"></i>
+                    <h5 class="card-title">Админ панель</h5>
+                    <p class="card-text">Django админка для управления пользователями и привычками</p>
+                    <a href="/admin/" class="btn btn-warning" target="_blank">
+                        <i class="fas fa-external-link-alt me-1"></i>Открыть Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- JWT Token -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card api-card h-100 position-relative">
+                <span class="badge bg-primary status-badge">API</span>
+                <div class="card-body text-center">
+                    <i class="fas fa-key fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">JWT Токены</h5>
+                    <p class="card-text">Получение и обновление JWT токенов для аутентификации</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success btn-sm" onclick="testEndpoint('/api/token/', 'POST')">
+                            <i class="fas fa-play me-1"></i>Получить токен
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="testEndpoint('/api/token/refresh/', 'POST')">
+                            <i class="fas fa-sync me-1"></i>Обновить токен
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Registration -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card api-card h-100 position-relative">
+                <span class="badge bg-primary status-badge">API</span>
+                <div class="card-body text-center">
+                    <i class="fas fa-user-plus fa-3x text-purple mb-3"></i>
+                    <h5 class="card-title">Регистрация</h5>
+                    <p class="card-text">Создание новых пользователей и управление профилем</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-purple btn-sm" onclick="testEndpoint('/api/users/register/', 'POST')" style="background-color: #6f42c1; border-color: #6f42c1; color: white;">
+                            <i class="fas fa-play me-1"></i>Регистрация
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="testEndpoint('/api/users/profile/', 'GET')">
+                            <i class="fas fa-user me-1"></i>Профиль
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Habits -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card api-card h-100 position-relative">
+                <span class="badge bg-primary status-badge">API</span>
+                <div class="card-body text-center">
+                    <i class="fas fa-seedling fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Привычки</h5>
+                    <p class="card-text">CRUD операции с привычками и публичные привычки</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success btn-sm" onclick="testEndpoint('/api/habits/', 'GET')">
+                            <i class="fas fa-list me-1"></i>Мои привычки
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="testEndpoint('/api/public-habits/', 'GET')">
+                            <i class="fas fa-globe me-1"></i>Публичные
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Test Section -->
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-flask me-2"></i>Быстрое тестирование API
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Выберите эндпоинт:</h6>
+                            <select id="endpointSelect" class="form-select mb-3">
+                                <option value="/api/docs/">API Документация</option>
+                                <option value="/api/users/register/">Регистрация пользователя</option>
+                                <option value="/api/token/">Получить JWT токен</option>
+                                <option value="/api/habits/">Список привычек</option>
+                                <option value="/api/public-habits/">Публичные привычки</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Действие:</h6>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary" onclick="openSelectedEndpoint()">
+                                    <i class="fas fa-external-link-alt me-1"></i>Открыть в новой вкладке
+                                </button>
+                                <button class="btn btn-outline-primary" onclick="copyEndpointUrl()">
+                                    <i class="fas fa-copy me-1"></i>Скопировать URL
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Section -->
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <h5 class="alert-heading">
+                    <i class="fas fa-info-circle me-2"></i>Статус сервисов
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><i class="fas fa-check-circle text-success me-2"></i><strong>Django:</strong> Запущен на порту 8000</p>
+                        <p><i class="fas fa-check-circle text-success me-2"></i><strong>API:</strong> Доступно и работает</p>
+                        <p><i class="fas fa-check-circle text-success me-2"></i><strong>Документация:</strong> Swagger UI готов</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><i class="fas fa-exclamation-triangle text-warning me-2"></i><strong>PostgreSQL:</strong> Используется SQLite (для разработки)</p>
+                        <p><i class="fas fa-exclamation-triangle text-warning me-2"></i><strong>Redis/Celery:</strong> Не запущены (для Telegram уведомлений)</p>
+                        <p><i class="fas fa-info-circle text-info me-2"></i><strong>Docker:</strong> Для полного функционала запустите docker-compose</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function testEndpoint(url, method) {
+    // Открываем Swagger UI с фокусом на конкретном эндпоинте
+    window.open('/api/docs/#/' + url.split('/')[2], '_blank');
+}
+
+function openSelectedEndpoint() {
+    const select = document.getElementById('endpointSelect');
+    const url = select.value;
+    window.open(url, '_blank');
+}
+
+function copyEndpointUrl() {
+    const select = document.getElementById('endpointSelect');
+    const url = window.location.origin + select.value;
+    navigator.clipboard.writeText(url).then(function() {
+        alert('URL скопирован: ' + url);
+    });
+}
+
+// Проверка статуса API при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/docs/')
+        .then(response => {
+            if (response.ok) {
+                console.log('API работает корректно');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при проверке API:', error);
+        });
+});
+</script>
+{% endblock %}
