@@ -11,7 +11,7 @@ permissions:
   packages: write
 
 env:
-  REGISTRY: ghcr.io
+  REGISTRY: ghcr.io  # Можно изменить на docker.io для Docker Hub
   IMAGE_NAME: ${{ github.repository_owner }}/curse_work_5
   # Альтернативный registry для Docker Hub (раскомментируйте если нужно)
   # REGISTRY: docker.io
@@ -126,6 +126,13 @@ jobs:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+    
+    - name: Verify authentication
+      run: |
+        echo "Registry: ${{ env.REGISTRY }}"
+        echo "Username: ${{ github.actor }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Using GHCR_TOKEN: ${{ secrets.GHCR_TOKEN != '' }}"
 
     - name: Generate safe tag
       id: tag
