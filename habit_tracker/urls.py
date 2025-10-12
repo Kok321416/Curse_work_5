@@ -23,9 +23,12 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import home_view, demo_view
+from .views import home_view, demo_view, health_check
 
 urlpatterns = [
+    # Health check
+    path("health/", health_check, name="health"),
+
     # Главная страница
     path("", home_view, name="home"),
     path("demo/", demo_view, name="demo"),

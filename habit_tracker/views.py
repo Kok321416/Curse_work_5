@@ -1,8 +1,14 @@
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
+from django.http import JsonResponse
 from habits.models import Habit
 
 User = get_user_model()
+
+
+def health_check(request):
+    """Health check endpoint для мониторинга"""
+    return JsonResponse({"status": "ok", "message": "Application is running"})
 
 
 def home_view(request):

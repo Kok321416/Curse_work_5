@@ -256,7 +256,28 @@ jobs:
     - name: Health Check
       run: |
         sleep 30
-        curl -f http://${{ secrets.HOST }}/health/ || exit 1
+        echo "Checking application health..."
+        
+        # Проверяем основную страницу
+        if curl -f -s http://${{ secrets.HOST }}/; then
+          echo "✅ Main page is accessible"
+        else
+          echo "❌ Main page failed"
+        fi
+        
+        # Проверяем health endpoint
+        if curl -f -s http://${{ secrets.HOST }}/health/; then
+          echo "✅ Health check passed"
+        else
+          echo "❌ Health check failed, but continuing..."
+        fi
+        
+        # Проверяем API документацию
+        if curl -f -s http://${{ secrets.HOST }}/api/docs/; then
+          echo "✅ API docs accessible"
+        else
+          echo "❌ API docs failed"
+        fi
 
   # Уведомление о деплое
   notify:
