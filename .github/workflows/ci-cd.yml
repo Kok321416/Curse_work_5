@@ -262,25 +262,39 @@ jobs:
           echo "Database container logs:"
           docker-compose -f docker-compose.prod.yml logs --tail=10 db
 
+    - name: Check Container Status
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          cd /opt/habit_tracker
+          echo "=== СТАТУС КОНТЕЙНЕРОВ ==="
+          docker-compose -f docker-compose.prod.yml ps
+          echo "=== ПРОВЕРКА ПОРТОВ ==="
+          netstat -tlnp | grep -E ":80|:8000" || echo "Ports not found"
+          echo "=== ПРОВЕРКА ПРОЦЕССОВ ==="
+          ps aux | grep -E "nginx|gunicorn|postgres" | grep -v grep || echo "Processes not found"
+
     - name: Health Check
       run: |
         sleep 30
         echo "Checking application health..."
         
-        # Проверяем статус контейнеров
+        # Проверяем статус контейнеров через SSH (упрощенный способ)
         echo "=== СТАТУС КОНТЕЙНЕРОВ ==="
-        ssh -o StrictHostKeyChecking=no -i <(echo "${{ secrets.SSH_PRIVATE_KEY }}") ${{ secrets.USERNAME }}@${{ secrets.HOST }} "cd /opt/habit_tracker && docker-compose -f docker-compose.prod.yml ps"
+        echo "Connecting to server to check containers..."
         
-        # Проверяем порты
-        echo "=== ПРОВЕРКА ПОРТОВ ==="
-        ssh -o StrictHostKeyChecking=no -i <(echo "${{ secrets.SSH_PRIVATE_KEY }}") ${{ secrets.USERNAME }}@${{ secrets.HOST }} "netstat -tlnp | grep :80"
-        
-        # Тестируем прямое подключение к Django
+        # Тестируем прямое подключение к Django (порт 8000)
         echo "=== ТЕСТ DJANGO (порт 8000) ==="
         if curl -f -s --connect-timeout 10 http://${{ secrets.HOST }}:8000/health/; then
           echo "✅ Django health check passed"
         else
           echo "❌ Django health check failed"
+          echo "Trying to get response headers:"
+          curl -I --connect-timeout 10 http://${{ secrets.HOST }}:8000/health/ || echo "No response from Django"
         fi
         
         # Тестируем через Nginx (порт 80)
@@ -290,7 +304,7 @@ jobs:
         else
           echo "❌ Nginx health check failed"
           echo "Response headers:"
-          curl -I http://${{ secrets.HOST }}/health/ || true
+          curl -I --connect-timeout 10 http://${{ secrets.HOST }}/health/ || echo "No response from Nginx"
         fi
         
         # Проверяем главную страницу
@@ -300,7 +314,15 @@ jobs:
         else
           echo "❌ Main page failed"
           echo "Response headers:"
-          curl -I http://${{ secrets.HOST }}/ || true
+          curl -I --connect-timeout 10 http://${{ secrets.HOST }}/ || echo "No response from main page"
+        fi
+        
+        # Проверяем API документацию
+        echo "=== ТЕСТ API ДОКУМЕНТАЦИИ ==="
+        if curl -f -s --connect-timeout 10 http://${{ secrets.HOST }}/api/docs/; then
+          echo "✅ API docs accessible"
+        else
+          echo "❌ API docs failed"
         fi
 
   # Уведомление о деплое
