@@ -252,31 +252,55 @@ jobs:
           
           # Проверка статуса
           docker-compose -f docker-compose.prod.yml ps
+          
+          # Диагностика контейнеров
+          echo "=== ПРОВЕРКА ЛОГОВ ==="
+          echo "Web container logs:"
+          docker-compose -f docker-compose.prod.yml logs --tail=20 web
+          echo "Nginx container logs:"
+          docker-compose -f docker-compose.prod.yml logs --tail=20 nginx
+          echo "Database container logs:"
+          docker-compose -f docker-compose.prod.yml logs --tail=10 db
 
     - name: Health Check
       run: |
         sleep 30
         echo "Checking application health..."
         
-        # Проверяем основную страницу
-        if curl -f -s http://${{ secrets.HOST }}/; then
-          echo "✅ Main page is accessible"
+        # Проверяем статус контейнеров
+        echo "=== СТАТУС КОНТЕЙНЕРОВ ==="
+        ssh -o StrictHostKeyChecking=no -i <(echo "${{ secrets.SSH_PRIVATE_KEY }}") ${{ secrets.USERNAME }}@${{ secrets.HOST }} "cd /opt/habit_tracker && docker-compose -f docker-compose.prod.yml ps"
+        
+        # Проверяем порты
+        echo "=== ПРОВЕРКА ПОРТОВ ==="
+        ssh -o StrictHostKeyChecking=no -i <(echo "${{ secrets.SSH_PRIVATE_KEY }}") ${{ secrets.USERNAME }}@${{ secrets.HOST }} "netstat -tlnp | grep :80"
+        
+        # Тестируем прямое подключение к Django
+        echo "=== ТЕСТ DJANGO (порт 8000) ==="
+        if curl -f -s --connect-timeout 10 http://${{ secrets.HOST }}:8000/health/; then
+          echo "✅ Django health check passed"
+        else
+          echo "❌ Django health check failed"
+        fi
+        
+        # Тестируем через Nginx (порт 80)
+        echo "=== ТЕСТ NGINX (порт 80) ==="
+        if curl -f -s --connect-timeout 10 http://${{ secrets.HOST }}/health/; then
+          echo "✅ Nginx health check passed"
+        else
+          echo "❌ Nginx health check failed"
+          echo "Response headers:"
+          curl -I http://${{ secrets.HOST }}/health/ || true
+        fi
+        
+        # Проверяем главную страницу
+        echo "=== ТЕСТ ГЛАВНОЙ СТРАНИЦЫ ==="
+        if curl -f -s --connect-timeout 10 http://${{ secrets.HOST }}/; then
+          echo "✅ Main page accessible"
         else
           echo "❌ Main page failed"
-        fi
-        
-        # Проверяем health endpoint
-        if curl -f -s http://${{ secrets.HOST }}/health/; then
-          echo "✅ Health check passed"
-        else
-          echo "❌ Health check failed, but continuing..."
-        fi
-        
-        # Проверяем API документацию
-        if curl -f -s http://${{ secrets.HOST }}/api/docs/; then
-          echo "✅ API docs accessible"
-        else
-          echo "❌ API docs failed"
+          echo "Response headers:"
+          curl -I http://${{ secrets.HOST }}/ || true
         fi
 
   # Уведомление о деплое
