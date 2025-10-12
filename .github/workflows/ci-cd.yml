@@ -1,0 +1,350 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, Final_work ]  # Тесты при push
+  pull_request:
+    branches: [ main ]  # PR в main для деплоя
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io  # Можно изменить на docker.io для Docker Hub
+  IMAGE_NAME: ${{ github.repository_owner }}/curse_work_5
+  # Альтернативный registry для Docker Hub (раскомментируйте если нужно)
+  # REGISTRY: docker.io
+  # IMAGE_NAME: your-dockerhub-username/curse_work_5
+
+jobs:
+  # Тестирование и линтинг
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Create .env file for testing
+      run: |
+        echo "SECRET_KEY=test-secret-key-for-github-actions-testing-only" >> .env
+        echo "DEBUG=True" >> .env
+        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_db" >> .env
+        echo "REDIS_URL=redis://localhost:6379/0" >> .env
+        echo "TELEGRAM_BOT_TOKEN=test-token" >> .env
+        echo "ALLOWED_HOSTS=localhost,127.0.0.1" >> .env
+
+    - name: Run migrations
+      run: |
+        python manage.py migrate
+
+    - name: Run flake8 linting
+      run: |
+        flake8 --statistics
+
+    - name: Check Black formatting
+      run: |
+        black --check --diff .
+
+    - name: Run tests
+      run: |
+        python manage.py test --verbosity=2
+
+    - name: Generate coverage report
+      run: |
+        coverage run --source='.' manage.py test
+        coverage report
+        coverage xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  # Сборка Docker образа
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+    
+    - name: Verify authentication
+      run: |
+        echo "Registry: ${{ env.REGISTRY }}"
+        echo "Username: ${{ github.actor }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Using GHCR_TOKEN: ${{ secrets.GHCR_TOKEN != '' }}"
+
+    - name: Generate safe tag
+      id: tag
+      run: |
+        # Создаем безопасный тег на основе SHA и ветки
+        BRANCH_NAME="${{ github.ref_name }}"
+        SHORT_SHA="${{ github.sha }}"
+        SHORT_SHA=${SHORT_SHA:0:7}
+        
+        # Приводим имя репозитория к нижнему регистру
+        REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+        IMAGE_NAME="${{ env.REGISTRY }}/${REPO_OWNER}/curse_work_5"
+        
+        # Очищаем имя ветки от недопустимых символов
+        SAFE_BRANCH=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9._-]/_/g')
+        
+        # Убеждаемся, что SAFE_BRANCH не пустой
+        if [ -z "$SAFE_BRANCH" ]; then
+          SAFE_BRANCH="unknown"
+        fi
+        
+        # Генерируем теги
+        if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          TAGS="${IMAGE_NAME}:latest"
+          TAGS="${TAGS},${IMAGE_NAME}:${SAFE_BRANCH}"
+          TAGS="${TAGS},${IMAGE_NAME}:sha-${SHORT_SHA}"
+        else
+          TAGS="${IMAGE_NAME}:${SAFE_BRANCH}"
+          TAGS="${TAGS},${IMAGE_NAME}:sha-${SHORT_SHA}"
+        fi
+        
+        echo "Repository owner: ${{ github.repository_owner }} -> ${REPO_OWNER}"
+        echo "Image name: ${IMAGE_NAME}"
+        echo "Branch: $BRANCH_NAME -> $SAFE_BRANCH"
+        echo "SHA: ${{ github.sha }} -> $SHORT_SHA"
+        echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+        echo "Generated tags: ${TAGS}"
+
+    - name: Set labels
+      id: labels
+      run: |
+        LABELS="org.opencontainers.image.title=Habit Tracker"
+        LABELS="${LABELS},org.opencontainers.image.description=API для трекера полезных привычек"
+        LABELS="${LABELS},org.opencontainers.image.source=https://github.com/${{ github.repository }}"
+        LABELS="${LABELS},org.opencontainers.image.revision=${{ github.sha }}"
+        LABELS="${LABELS},org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+        
+        echo "labels=${LABELS}" >> $GITHUB_OUTPUT
+        echo "Generated labels: ${LABELS}"
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64
+        push: true  # Измените на false для тестирования сборки без push
+        tags: ${{ steps.tag.outputs.tags }}
+        labels: ${{ steps.labels.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Деплой на сервер
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.event_name == 'pull_request' && github.head_ref == 'Final_work' && github.base_ref == 'main'
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          # Переход в директорию проекта
+          cd /opt/habit_tracker
+          
+          # Обновление кода (для PR берем head ветку)
+          BRANCH_NAME="${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}"
+          git pull origin $BRANCH_NAME
+          
+          # Создание .env файла из секретов
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
+          echo "DEBUG=False" >> .env
+          echo "ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}" >> .env
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+          echo "REDIS_URL=redis://redis:6379/0" >> .env
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
+          echo "CELERY_BROKER_URL=redis://redis:6379/0" >> .env
+          echo "CELERY_RESULT_BACKEND=redis://redis:6379/0" >> .env
+          
+          # Остановка старых контейнеров
+          docker-compose -f docker-compose.prod.yml down
+          
+          # Обновление образов
+          docker-compose -f docker-compose.prod.yml pull
+          
+          # Сборка и запуск новых контейнеров
+          docker-compose -f docker-compose.prod.yml build --no-cache
+          docker-compose -f docker-compose.prod.yml up -d
+          
+          # Применение миграций
+          docker-compose -f docker-compose.prod.yml exec -T web python manage.py migrate
+          
+          # Сбор статических файлов
+          docker-compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
+          
+          # Очистка неиспользуемых образов
+          docker system prune -f
+          
+          # Проверка статуса
+          docker-compose -f docker-compose.prod.yml ps
+          
+          # Диагностика контейнеров
+          echo "=== ПРОВЕРКА ЛОГОВ ==="
+          echo "Web container logs:"
+          docker-compose -f docker-compose.prod.yml logs --tail=20 web
+          echo "Nginx container logs:"
+          docker-compose -f docker-compose.prod.yml logs --tail=20 nginx
+          echo "Database container logs:"
+          docker-compose -f docker-compose.prod.yml logs --tail=10 db
+
+    - name: Check Container Status
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          cd /opt/habit_tracker
+          echo "=== СТАТУС КОНТЕЙНЕРОВ ==="
+          docker-compose -f docker-compose.prod.yml ps
+          echo "=== ПРОВЕРКА ПОРТОВ ==="
+          netstat -tlnp | grep -E ":80|:8000" || echo "Ports not found"
+          echo "=== ПРОВЕРКА ПРОЦЕССОВ ==="
+          ps aux | grep -E "nginx|gunicorn|postgres" | grep -v grep || echo "Processes not found"
+
+    - name: Health Check
+      run: |
+        sleep 30
+        echo "Checking application health..."
+        
+        # Проверяем статус контейнеров через SSH (упрощенный способ)
+        echo "=== СТАТУС КОНТЕЙНЕРОВ ==="
+        echo "Connecting to server to check containers..."
+        
+        # Тестируем прямое подключение к Django (порт 8000)
+        echo "=== ТЕСТ DJANGO (порт 8000) ==="
+        if curl -f -s --connect-timeout 10 http://${{ secrets.HOST }}:8000/health/; then
+          echo "✅ Django health check passed"
+        else
+          echo "❌ Django health check failed"
+          echo "Trying to get response headers:"
+          curl -I --connect-timeout 10 http://${{ secrets.HOST }}:8000/health/ || echo "No response from Django"
+        fi
+        
+        # Тестируем через Nginx (порт 80)
+        echo "=== ТЕСТ NGINX (порт 80) ==="
+        if curl -f -s --connect-timeout 10 http://${{ secrets.HOST }}/health/; then
+          echo "✅ Nginx health check passed"
+        else
+          echo "❌ Nginx health check failed"
+          echo "Response headers:"
+          curl -I --connect-timeout 10 http://${{ secrets.HOST }}/health/ || echo "No response from Nginx"
+        fi
+        
+        # Проверяем главную страницу
+        echo "=== ТЕСТ ГЛАВНОЙ СТРАНИЦЫ ==="
+        if curl -f -s --connect-timeout 10 http://${{ secrets.HOST }}/; then
+          echo "✅ Main page accessible"
+        else
+          echo "❌ Main page failed"
+          echo "Response headers:"
+          curl -I --connect-timeout 10 http://${{ secrets.HOST }}/ || echo "No response from main page"
+        fi
+        
+        # Проверяем API документацию
+        echo "=== ТЕСТ API ДОКУМЕНТАЦИИ ==="
+        if curl -f -s --connect-timeout 10 http://${{ secrets.HOST }}/api/docs/; then
+          echo "✅ API docs accessible"
+        else
+          echo "❌ API docs failed"
+        fi
+
+  # Уведомление о деплое
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test, build, deploy]
+    if: always()
+    
+    steps:
+    - name: Notify deployment status
+      run: |
+        echo "🔍 Job Results:"
+        echo "Test: ${{ needs.test.result }}"
+        echo "Build: ${{ needs.build.result }}"
+        echo "Deploy: ${{ needs.deploy.result }}"
+        echo "Event: ${{ github.event_name }}"
+        
+        if [ "${{ needs.deploy.result }}" == "success" ]; then
+          echo "✅ Deployment successful via PR Final_work → main!"
+        elif [ "${{ needs.deploy.result }}" == "skipped" ]; then
+          echo "⏭️ Deployment skipped (не PR Final_work → main)"
+        else
+          echo "❌ Deployment failed!"
+          exit 1
+        fi
