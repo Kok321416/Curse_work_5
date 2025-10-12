@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main, develop, Final_work ]
   pull_request:
-    branches: [ main, develop ]  # PR только в основные ветки
+    branches: [ main ]  # PR в main будет запускать деплой
 
 permissions:
   contents: read
@@ -198,7 +198,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: [test, build]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Final_work')
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
     
     steps:
     - uses: actions/checkout@v4
@@ -214,8 +214,9 @@ jobs:
           # Переход в директорию проекта
           cd /opt/habit_tracker
           
-          # Обновление кода
-          git pull origin ${{ github.ref_name }}
+          # Обновление кода (для PR берем head ветку)
+          BRANCH_NAME="${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}"
+          git pull origin $BRANCH_NAME
           
           # Создание .env файла из секретов
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
@@ -270,11 +271,12 @@ jobs:
         echo "Test: ${{ needs.test.result }}"
         echo "Build: ${{ needs.build.result }}"
         echo "Deploy: ${{ needs.deploy.result }}"
+        echo "Event: ${{ github.event_name }}"
         
         if [ "${{ needs.deploy.result }}" == "success" ]; then
-          echo "✅ Deployment successful!"
+          echo "✅ Deployment successful via PR!"
         elif [ "${{ needs.deploy.result }}" == "skipped" ]; then
-          echo "⏭️ Deployment skipped (not main/Final_work branch)"
+          echo "⏭️ Deployment skipped (no PR to main)"
         else
           echo "❌ Deployment failed!"
           exit 1
