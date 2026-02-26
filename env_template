@@ -1,0 +1,26 @@
+# Django настройки
+SECRET_KEY=your-secret-key-here-change-in-production
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+
+# База данных PostgreSQL
+POSTGRES_DB=habit_tracker
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_PORT=5432
+DATABASE_URL=postgresql://postgres:postgres@db:5432/habit_tracker
+
+# Redis
+REDIS_PORT=6379
+REDIS_URL=redis://redis:6379/0
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token-here
+
+# Порты сервисов
+WEB_PORT=8000
+
+# Celery настройки
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/0
+

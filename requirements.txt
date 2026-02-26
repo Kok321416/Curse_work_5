@@ -5,7 +5,7 @@ celery==5.3.4
 redis==5.0.1
 python-telegram-bot==20.7
 python-decouple==3.8
-# psycopg2-binary==2.9.9  # Закомментировано для Windows, используем SQLite для разработки
+psycopg2-binary==2.9.9
 drf-spectacular==0.26.5
 coverage==7.3.2
 flake8==6.1.0
